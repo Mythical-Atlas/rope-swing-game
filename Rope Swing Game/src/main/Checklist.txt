@@ -1,0 +1,2 @@
+mouse detection     = working     - can get mouse pos + clicking
+collision detection = working     - rectangle collision works perfectly
