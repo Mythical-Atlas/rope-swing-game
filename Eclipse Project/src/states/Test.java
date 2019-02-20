@@ -2,11 +2,13 @@ package states;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 
 import objects.Player;
 import objects.TestBlip;
@@ -53,12 +55,12 @@ public class Test extends State {
 		tiles[25] = new Tile(17 * 32, 12 * 32, 32, 32);
 	}
 	
-	public void update() {
+	public void update(JFrame frame) {
 		int[][] collisionData = new int[tiles.length][4];
 		
 		for(int i = 0; i < tiles.length; i++) {collisionData[i] = new int[]{tiles[i].x, tiles[i].y, tiles[i].w, tiles[i].h};}
 		
-		player.update(collisionData);
+		player.update(collisionData, frame);
 	}
 	public void draw(Graphics2D graphics) {
 		graphics.setColor(Color.BLACK);

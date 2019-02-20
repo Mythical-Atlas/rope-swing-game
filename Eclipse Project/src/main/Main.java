@@ -27,9 +27,11 @@ public class Main extends JPanel implements MouseListener, KeyListener, Runnable
 	static final int WIDTH = 640;
 	static final int HEIGHT = 480;
 
+	static JFrame frame;
+	
 	public static void main(String[] args) {
 		Point center = GraphicsEnvironment.getLocalGraphicsEnvironment().getCenterPoint();
-		JFrame frame = new JFrame("Rope Swing Game");
+		frame = new JFrame("Rope Swing Game");
 		
 		frame.setBounds(center.x - WIDTH * SCALE / 2, center.y - HEIGHT * SCALE / 2, WIDTH * SCALE, HEIGHT * SCALE);
 		frame.setContentPane(new Main());
@@ -65,7 +67,7 @@ public class Main extends JPanel implements MouseListener, KeyListener, Runnable
 		while(true) {
 			long start = System.nanoTime();
 			
-			states[currentState].update();
+			states[currentState].update(frame);
 			if(states[currentState].switchStates > -1) {setState(states[currentState].switchStates);}
 			
 			states[currentState].draw(graphics);

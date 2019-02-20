@@ -1,6 +1,82 @@
 package main;
 
 public class Collision {
+	public static boolean lineLine(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+		// calculate the direction of the lines
+		double uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+		double uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+
+		// if uA and uB are between 0-1, lines are colliding
+		if(uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {return(true);}
+		return(false);
+	}
+	
+	public static double[] whereLineLine(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+		// calculate the direction of the lines
+		double uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+		double uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+
+		// if uA and uB are between 0-1, lines are colliding
+		if(uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {return(new double[]{x1 + (uA * (x2-x1)), y1 + (uA * (y2-y1))});}
+		return(new double[]{0, 0});
+	}
+	
+	public static boolean lineRect(double x1, double y1, double x2, double y2, double rx, double ry, double rw, double rh) {
+		// check if the line has hit any of the rectangle's sides
+		// uses the Line/Line function below
+		boolean left =   lineLine(x1,y1,x2,y2, rx,ry,rx, ry+rh);
+		boolean right =  lineLine(x1,y1,x2,y2, rx+rw,ry, rx+rw,ry+rh);
+		boolean top =    lineLine(x1,y1,x2,y2, rx,ry, rx+rw,ry);
+		boolean bottom = lineLine(x1,y1,x2,y2, rx,ry+rh, rx+rw,ry+rh);
+
+		// if ANY of the above are true, the line
+		// has hit the rectangle/
+		// also checks if both endpoints of the line are contained in the rectangle
+		if(
+			left ||
+			right ||
+			top ||
+			bottom ||
+			x1 > rx && x1 < rx + rw && y1 > ry && y1 < ry + rh &&
+			x2 > rx && x2 < rx + rw && y2 > ry && y2 < ry + rh
+		) {return(true);}
+		return(false);
+	}
+	
+	public static boolean lineRectEdges(double x1, double y1, double x2, double y2, double rx, double ry, double rw, double rh) {
+		// check if the line has hit any of the rectangle's sides
+		// uses the Line/Line function below
+		boolean left =   lineLine(x1,y1,x2,y2, rx,ry,rx, ry+rh);
+		boolean right =  lineLine(x1,y1,x2,y2, rx+rw,ry, rx+rw,ry+rh);
+		boolean top =    lineLine(x1,y1,x2,y2, rx,ry, rx+rw,ry);
+		boolean bottom = lineLine(x1,y1,x2,y2, rx,ry+rh, rx+rw,ry+rh);
+
+		// if ANY of the above are true, the line
+		// has hit the rectangle/
+		// DOESN'T check if both endpoints of the line are contained in the rectangle
+		if(
+			left ||
+			right ||
+			top ||
+			bottom
+		) {return(true);}
+		return(false);
+	}
+	
+	public static boolean[] whichLineRectEdges(double x1, double y1, double x2, double y2, double rx, double ry, double rw, double rh) {
+		// check if the line has hit any of the rectangle's sides
+		// uses the Line/Line function below
+		boolean left =   lineLine(x1,y1,x2,y2, rx,ry,rx, ry+rh);
+		boolean right =  lineLine(x1,y1,x2,y2, rx+rw,ry, rx+rw,ry+rh);
+		boolean top =    lineLine(x1,y1,x2,y2, rx,ry, rx+rw,ry);
+		boolean bottom = lineLine(x1,y1,x2,y2, rx,ry+rh, rx+rw,ry+rh);
+
+		// if ANY of the above are true, the line
+		// has hit the rectangle/
+		// DOESN'T check if both endpoints of the line are contained in the rectangle
+		return(new boolean[]{left, right, top, bottom});
+	}
+	
 	public static boolean checkCollision(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2) {
 		return(
 			(x1 >= x2 && x1 < x2 + w2 || x1 + w1 > x2 && x1 + w1 <= x2 + w2) &&

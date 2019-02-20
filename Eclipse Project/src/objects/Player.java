@@ -3,8 +3,13 @@ package objects;
 import static java.awt.event.KeyEvent.*;
 
 import java.awt.Color;
+import java.awt.Frame;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
+
+import javax.swing.JFrame;
 
 import main.Collision;
 import main.Physics;
@@ -47,33 +52,177 @@ public class Player {
 	boolean canSwing;
 	boolean swinging = false;
 	
+	boolean mouseInWindow = false;
+	double xMouse;
+	double yMouse;
+	double xMouseRay;
+	double yMouseRay;
+	boolean canHook;
+	
+	boolean reset;
+	
+	double ox, oy;
+	
 	public Player(int x, int y) {
 		this.x = x;
 		this.y = y;
+		
+		ox = x;
+		oy = y;
 	}
 	
-	public void update(int[/* index */][/* x, y, w, h */] tiles) {
+	public void update(int[/* index */][/* x, y, w, h */] tiles, JFrame frame) {
+		if(mouseInWindow) {
+			Point mousePos = MouseInfo.getPointerInfo().getLocation(); // gets mouse pos on monitor
+			
+			// translate above position to be mouse position in frame of window
+			xMouse = mousePos.x - frame.getLocationOnScreen().x - 3;
+			yMouse = mousePos.y - frame.getLocationOnScreen().y - 26;
+			
+			// default value for mouse line
+			xMouseRay = xMouse;
+			yMouseRay = yMouse;
+			
+			// mouse line = line between center of player and mouse
+			
+			canHook = false;
+			
+			// check if mouse line is colliding with any tiles
+			int stopped = 0;
+			for(int i = 0; i < tiles.length; i++) {if(Collision.lineRect(x + w / 2, y + h / 2, xMouse, yMouse, tiles[i][0], tiles[i][1], tiles[i][2], tiles[i][3])) {stopped++;}}
+			
+			// if so, trim the line so that it goes from the center of the player to the closest tile on the line
+			if(stopped > 0) {
+				int[][] collidingTiles = new int[stopped][4];
+				
+				canHook = true;
+				
+				// get list of tiles colliding with mouse line
+				int index = 0;
+				for(int i = 0; i < tiles.length; i++) {
+					if(Collision.lineRectEdges(x + w / 2, y + h / 2, xMouse, yMouse, tiles[i][0], tiles[i][1], tiles[i][2], tiles[i][3])) {
+						collidingTiles[index] = tiles[i];
+						index++;
+					}
+				}
+				
+				// check which sides of the colliding tiles pass through mouse line
+				int numPossibilities = stopped * 4;
+				double[][] possibilities = new double[numPossibilities][2];
+				boolean[] works = new boolean[numPossibilities];
+				
+				for(int i = 0; i < stopped; i++) {
+					boolean[] tempBools = Collision.whichLineRectEdges(x + w / 2, y + h / 2, xMouse, yMouse, collidingTiles[i][0], collidingTiles[i][1], collidingTiles[i][2], collidingTiles[i][3]);
+				
+					works[i * 4 + 0] = tempBools[0];
+					works[i * 4 + 1] = tempBools[1];
+					works[i * 4 + 2] = tempBools[2];
+					works[i * 4 + 3] = tempBools[3];
+				}
+				
+				// gets intersecting point for each side that collides with the mouse line
+				for(int o = 0; o < numPossibilities; o++) {
+					if(works[o]) {
+						double x1 = 0;
+						double y1 = 0;
+						double x2 = 0;
+						double y2 = 0;
+						
+						int i = (int)Math.floor(o / 4);
+						
+						// check which edge is currently being checked
+						if(o % 4 == 0) { // left
+							x1 = collidingTiles[i][0];
+							y1 = collidingTiles[i][1];
+							x2 = collidingTiles[i][0];
+							y2 = collidingTiles[i][1] + collidingTiles[i][3];
+						}
+						if(o % 4 == 1) { // right
+							x1 = collidingTiles[i][0] + collidingTiles[i][2];
+							y1 = collidingTiles[i][1];
+							x2 = collidingTiles[i][0] + collidingTiles[i][2];
+							y2 = collidingTiles[i][1] + collidingTiles[i][3];
+						}
+						if(o % 4 == 2) { // top
+							x1 = collidingTiles[i][0];
+							y1 = collidingTiles[i][1];
+							x2 = collidingTiles[i][0] + collidingTiles[i][2];
+							y2 = collidingTiles[i][1];
+						}
+						if(o % 4 == 3) { // bottom
+							x1 = collidingTiles[i][0];
+							y1 = collidingTiles[i][1] + collidingTiles[i][3];
+							x2 = collidingTiles[i][0] + collidingTiles[i][2];
+							y2 = collidingTiles[i][1] + collidingTiles[i][3];
+						}
+						
+						possibilities[o] = Collision.whereLineLine(x + w / 2, y + h / 2, xMouse, yMouse, x1, y1, x2, y2);}
+				}
+				
+				// find intersecting point closest to player
+				// intersecting point refering to point of intersection between mouse line and a given side of a tile
+				double smallestDistance = 0;
+				int smallestIndex = -1;
+				for(int i = 0; i < possibilities.length; i++) {
+					if(works[i]) {
+						double xDist = Math.abs((x + w / 2) - possibilities[i][0]);
+						double yDist = Math.abs((y + h / 2) - possibilities[i][1]);
+						double tempDistance = Math.sqrt(xDist * xDist + yDist * yDist);
+						
+						if(tempDistance < smallestDistance || smallestIndex == -1) {
+							smallestDistance = tempDistance;
+							smallestIndex = i;
+						}
+					}
+				}
+				
+				// set mouseRay position to be closest intersecting point
+				if(smallestIndex != -1) {
+					xMouseRay = possibilities[smallestIndex][0];
+					yMouseRay = possibilities[smallestIndex][1];
+				}
+			}
+		}
+		
+		if(reset) { // reset player (useful if debugging and no stage bounds)
+			reset = false;
+			
+			x = ox;
+			y = oy;
+			dx = 0;
+			dy = 0;
+			da = 0;
+			canSwing = false;
+			swinging = false;
+			canHook = false;
+		}
+		
+		// set ground flag if row of pixels below player is colliding with tile
 		ground = false;
 		for(int i = 0; i < tiles.length; i++) {if(Collision.checkCollision(x, y + h, w, 1, tiles[i][0], tiles[i][1], tiles[i][2], tiles[i][3])) {ground = true;}}
 		
+		// move player on ground
 		if(left && !right && dx > -X_MAX) {
 			dx -= X_ACCEL;
-			if(dx > 0) {dx -= X_DECEL;} // additional speed if going against current velocity
+			if(dx > 0 && ground) {dx -= X_DECEL;} // additional speed if going against current velocity
 		}
 		if(right && !left && dx < X_MAX) {
 			dx += X_ACCEL;
-			if(dx < 0) {dx += X_DECEL;} // additional speed if going against current velocity
+			if(dx < 0 && ground) {dx += X_DECEL;} // additional speed if going against current velocity
 		}
 		
 		if(ground) {
+			// apply friction
 			if(!left && !right || left && right) {
 				if(dx < -X_ACCEL) {dx += X_DECEL;}
 				else if(dx > X_ACCEL) {dx -= X_DECEL;}
 				else {dx = 0;}
 			}
 			
+			// trim rope while on ground
 			if(canSwing) {maxDistance = Math.abs(Math.sqrt(((x + w / 2 - anchor[0]) * (x + w / 2 - anchor[0])) + ((y + h / 2 - anchor[1]) * (y + h / 2 - anchor[1]))));}
 			
+			// jump
 			if(space && canJump) {
 				canJump = false;
 				jumping = true;
@@ -81,9 +230,11 @@ public class Player {
 				
 				dy -= JUMP_FORCE;
 			}
-			if(!space) {canJump = true;}
+			if(!space) {canJump = true;} // allow to jump with space, but only if on ground and space is released
 		}
 		else {
+			// step jump
+			// holding space after jumping allows for extra height (more like allows default height - releasing space decelerates player quickly)
 			if(!swinging) {
 				if(jumping) {
 					if(!space) {dy += JUMP_DECEL;}
@@ -94,6 +245,7 @@ public class Player {
 			else {jumping = false;}
 		}
 		
+		// move player while swinging
 		if(swinging) {
 			if(left && da > -A_MAX) {
 				/*if((y + h / 2 - anchor[1]) < 0) {da += A_ACCEL;}
@@ -123,8 +275,6 @@ public class Player {
 				}
 			}
 			else {
-				System.out.println(da);
-				
 				if((y + h / 2 - anchor[1]) < 0 && da <= 5 && da >= -5) { // not sure why 5, but using trial and error it just feels right
 					swinging = false;
 					
@@ -151,8 +301,8 @@ public class Player {
 		}
 		
 		// apply gravity to dy
-		if(!swinging) {dy += LINEAR_GRAVITY;}
-		else {
+		if(!swinging) {dy += LINEAR_GRAVITY;} // easier when not swinging
+		else { // changes amount of force applied to da depending on how close to being parallel with the ground the player is
 			double xGrav = Math.cos(angle);
 			double yGrav = Math.sin(angle);
 			
@@ -165,20 +315,22 @@ public class Player {
 			
 			double cp = (nx1 * ny2) - (ny1 * nx2);
 			
+			//   0% = directly above or below anchor
+			// 100% = directly left or right to anchor
+			
 			//   0% = anchor[1] (+ or -) maxDistance
 			// 100% = anchor[1]
 			
 			double gravOffset = cp;
 			
-			System.out.println("grav = " + (ANGULAR_GRAVITY * gravOffset));
-			
 			da += ANGULAR_GRAVITY * gravOffset;
 			
+			// apply air friction/resistance
 			if(da < 0) {da += A_DECEL;}
 			else if(da > 0) {da -= A_DECEL;}
 		}
 		
-		// limit speed
+		// limit speed (atm speed not limited, just won't accelerate if above max speed)
 		/*if(dx < -X_MAX) {dx = -X_MAX;}
 		if(dx > X_MAX) {dx = X_MAX;}
 		if(dy < -Y_MAX) {dy = -Y_MAX;}
@@ -186,21 +338,23 @@ public class Player {
 		if(da < -A_MAX) {da = -A_MAX;}
 		if(da > A_MAX) {da = A_MAX;}*/
 		
+		// step angle with da
 		if(swinging) {
 			angle -= da / maxDistance;
 			
+			// make sure angle isn't outside of radian range
 			if(angle > Math.PI * 2) {angle -= Math.PI * 2;}
 			if(angle < 0) {angle += Math.PI * 2;}
 		}
 		
-		// step x
+		// step x with dx
 		if(!swinging) {x += dx;}
 		else {x = Math.cos(angle) * maxDistance + anchor[0] - w / 2;}
 		
 		// pop player out of solids
 		collisionResponse(tiles);
 		
-		// step y
+		// step y with dy
 		if(!swinging) {y += dy;}
 		else {y = Math.sin(angle) * maxDistance + anchor[1] - h / 2;}
 		
@@ -216,14 +370,30 @@ public class Player {
 	}
 	
 	public void draw(Graphics2D graphics) {
+		// draw player rect
 		graphics.setColor(color);
 		graphics.fillRect((int)x, (int)y, w, h);
 		
+		// change rope color if at max distance
 		if(swinging) {color = Color.GREEN;}
 		else {color = Color.WHITE;}
 		
+		// draw rope + anchor circle
 		graphics.setColor(color);
-		if(canSwing) {graphics.drawLine((int)x + w / 2, (int)y + h / 2, (int)anchor[0], (int)anchor[1]);}
+		if(canSwing) {
+			graphics.fillOval((int)anchor[0] - 5, (int)anchor[1] - 5, 10, 10);
+			graphics.drawLine((int)x + w / 2, (int)y + h / 2, (int)anchor[0], (int)anchor[1]);
+			
+		}
+		
+		// draw mouse raw (line between center of player and mouse pos)
+		graphics.setColor(Color.GRAY);
+		if(mouseInWindow) {
+			if(!canSwing) {graphics.drawLine((int)x + w / 2, (int)y + h / 2, (int)xMouse, (int)yMouse);}
+			
+			graphics.setColor(Color.CYAN);
+			if(!canSwing && canHook) {graphics.drawLine((int)x + w / 2, (int)y + h / 2, (int)xMouseRay, (int)yMouseRay);}
+		}
 	}
 	
 	private void collisionResponse(int[][] tiles) {
@@ -301,18 +471,21 @@ public class Player {
 			case(VK_A): left = false; break;
 			case(VK_D): right = false; break;
 			case(VK_SPACE): space = false; break;
+			case(VK_R): reset = true; break;
 			//case VK_SHIFT: shift = false; break;
 		}
 	}
 
 	public void mouseClicked(MouseEvent mouse) {}
-	public void mouseEntered(MouseEvent mouse) {}
-	public void mouseExited(MouseEvent mouse) {}
+	public void mouseEntered(MouseEvent mouse) {mouseInWindow = true;}
+	public void mouseExited(MouseEvent mouse) {mouseInWindow = false;}
 	public void mousePressed(MouseEvent mouse) {
-		anchor = new double[]{mouse.getX(), mouse.getY()};
-		maxDistance = Math.abs(Math.sqrt(((x + w / 2 - anchor[0]) * (x + w / 2 - anchor[0])) + ((y + h / 2 - anchor[1]) * (y + h / 2 - anchor[1]))));
-		
-		canSwing = true;
+		if(canHook) {
+			anchor = new double[]{xMouseRay, yMouseRay};
+			maxDistance = Math.abs(Math.sqrt(((x + w / 2 - anchor[0]) * (x + w / 2 - anchor[0])) + ((y + h / 2 - anchor[1]) * (y + h / 2 - anchor[1]))));
+			
+			canSwing = true;
+		}
 	}
 	public void mouseReleased(MouseEvent mouse) {canSwing = false;}
 }
