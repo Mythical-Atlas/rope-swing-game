@@ -24,8 +24,8 @@ public class Main extends JPanel implements MouseListener, KeyListener, Runnable
 	
 	static final int FPS = 60;
 	static final int SCALE = 1;
-	static final int WIDTH = 640;
-	static final int HEIGHT = 480;
+	static final int WIDTH = 1280;
+	static final int HEIGHT = 720;
 
 	static JFrame frame;
 	

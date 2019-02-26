@@ -16,10 +16,10 @@ public class Tile {
 		this.h = h;
 	}
 	
-	public void draw(double px, double py, int pw, int ph, Graphics2D graphics) {
+	public void draw(double px, double py, int pw, int ph, Graphics2D graphics, int xOffset, int yOffset) {
 		if(Collision.checkCollision(x, y, w, h, px, py, pw, ph)) {graphics.setColor(Color.BLUE);}
 		else {graphics.setColor(Color.RED);}
 		
-		graphics.fillRect(x, y, w, h);
+		graphics.fillRect(x + xOffset, y + yOffset, w, h);
 	}
 }
