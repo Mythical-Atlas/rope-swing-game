@@ -9,6 +9,7 @@ import java.math.RoundingMode;
 
 import javax.swing.JFrame;
 
+import main.Main;
 import main.MapReader;
 import objects.Player;
 import objects.Tile;
@@ -18,6 +19,11 @@ public class Test extends State {
 	
 	Tile[] tiles;
 	
+	int mapWidth;
+	int mapHeight;
+	int tileWidth;
+	int tileHeight;
+	
 	int error;
 	String errorType;
 	
@@ -25,16 +31,26 @@ public class Test extends State {
 	boolean showControls = true;
 	
 	public Test() {
-		new Player(0 * 16, 0 * 16);
+		int[] tileMapInfo = null;
 		
 		try {
-			tiles = MapReader.readTileMap(this.getClass().getClassLoader().getResourceAsStream("testTileMap.json"));
+			tiles = MapReader.readTileMap(getClass().getClassLoader().getResourceAsStream("testTileMap.json"));
+			tileMapInfo =  MapReader.readTileMapInfo(getClass().getClassLoader().getResourceAsStream("testTileMap.json"));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			
 			error = 1;
 			errorType = e.getClass().getCanonicalName();
+		}
+		
+		if(error == 0) {
+			mapWidth = tileMapInfo[0];
+			mapHeight = tileMapInfo[1];
+			tileWidth = tileMapInfo[2];
+			tileHeight = tileMapInfo[3];
+			
+			new Player(2 * tileWidth, 58 * tileHeight, mapWidth * tileWidth, mapHeight * tileHeight);
 		}
 	}
 	
@@ -54,14 +70,14 @@ public class Test extends State {
 			int fontHeight = graphics.getFontMetrics().getHeight();
 			
 			graphics.setColor(Color.BLACK);
-			graphics.fillRect(0, 0, 1280, 720); // HARDCODED SCREEN SIZE
+			graphics.fillRect(0, 0, Main.WIDTH, Main.HEIGHT);
 			
 			for(int i = 0; i < tiles.length; i++) {tiles[i].draw(Player.x, Player.y, Player.w, Player.h, graphics, xOffset, yOffset);}
 			
 			Player.draw(graphics);
 			
 			graphics.setColor(Color.DARK_GRAY);
-			graphics.drawString("Programmed by Ben Correll", 0, 720);
+			graphics.drawString("Programmed by Ben Correll", fontHeight / 2, Main.HEIGHT);
 			
 			// display info + options
 			graphics.setColor(Color.WHITE);
@@ -93,8 +109,10 @@ public class Test extends State {
 			graphics.drawString("Y = " + round(player.yMouse + xOffset, 2), 0,          	fontHeight * 14);*/
 		}
 		else {
+			System.err.println("ERROR");
+			
 			graphics.setColor(Color.WHITE);
-			graphics.fillRect(0, 0, 1280, 720); // HARDCODED SCREEN SIZE
+			graphics.fillRect(0, 0, Main.WIDTH, Main.HEIGHT);
 			
 			graphics.setColor(Color.BLACK);
 			graphics.drawString(errorType, 0, graphics.getFontMetrics().getHeight());

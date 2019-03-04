@@ -1,18 +1,18 @@
-package objects;
+package main;
 
 import java.awt.MouseInfo;
 import java.awt.Point;
 
 import javax.swing.JFrame;
 
-import main.Collision;
+import objects.Player;
 
 public class MiscFunctions {
-	public static void scrollScreen() {
-		int screenWidth = 1280;
-		int screenHeight = 720;
-		int worldWidth = 1280 * 2;
-		int worldHeight = 960 * 2;
+	public static void scrollScreen(int mapWidth, int mapHeight) {
+		int screenWidth = Main.WIDTH;
+		int screenHeight = Main.HEIGHT;
+		int worldWidth = mapWidth;
+		int worldHeight = mapHeight;
 		
 		double xReference = Player.x + Player.w / 2;
 		double yReference = Player.y + Player.h / 2;
@@ -38,11 +38,8 @@ public class MiscFunctions {
 		
 		double[] oofNotReally = MiscFunctions.getMouseRay(tiles); // get mouse "ray" end point from mouse pos
 		
-		Player.xTempMouse = Player.xMouse;
-		Player.yTempMouse = Player.yMouse;
-		
-		Player.xMouseRay = Player.xTempMouse;
-		Player.yMouseRay = Player.xTempMouse;
+		Player.xMouseRay = Player.xMouse;
+		Player.yMouseRay = Player.xMouse;
 		
 		// mouse line = line between center of player and mouse
 		
@@ -62,13 +59,13 @@ public class MiscFunctions {
 		//double xLength = 1280 / 2;
 		//double yLength = 720 / 2;
 		
-		double xTempTempDistLeft = 1280 - (Player.x + Player.w / 2) + Player.xOffset;
-		double xTempTempDistRight = -((Player.x + Player.w / 2) + Player.xOffset - 1280);
-		double yTempTempDistUp = 720 - (Player.y + Player.h / 2) + Player.yOffset;
-		double yTempTempDistDown = -((Player.y + Player.h / 2) + Player.yOffset - 720);
+		double xTempTempDistLeft = Main.WIDTH - (Player.x + Player.w / 2) + Player.xOffset;
+		double xTempTempDistRight = -((Player.x + Player.w / 2) + Player.xOffset - Main.WIDTH);
+		double yTempTempDistUp = Main.HEIGHT - (Player.y + Player.h / 2) + Player.yOffset;
+		double yTempTempDistDown = -((Player.y + Player.h / 2) + Player.yOffset - Main.HEIGHT);
 		
 		double tempAngle = Math.atan(yMouseDist / xMouseDist); // INACCURATE (not sure why yet)
-		double screenCorner = Math.sqrt(1280 * 1280 + 720 * 720);
+		double screenCorner = Math.sqrt(Main.WIDTH * Main.WIDTH + Main.HEIGHT * Main.HEIGHT);
 		
 		if(((Player.x + Player.w / 2) - Player.xMouse) > 0) {screenCorner *= -1;}
 		
@@ -112,7 +109,7 @@ public class MiscFunctions {
 		// check if mouse line is colliding with any tiles
 		int stopped = 0;
 		for(int i = 0; i < tiles.length; i++) {if(Collision.lineRect(Player.x + Player.w / 2, Player.y + Player.h / 2, Player.xMouse, Player.yMouse, tiles[i][0], tiles[i][1], tiles[i][2], tiles[i][3])) {stopped++;}}
-					
+		
 		// if so, trim the line so that it goes from the center of the player to the closest tile on the line
 		if(stopped > 0) {
 			int[][] collidingTiles = new int[stopped][4];
@@ -134,7 +131,7 @@ public class MiscFunctions {
 			boolean[] works = new boolean[numPossibilities];
 			
 			for(int i = 0; i < collidingTiles.length; i++) {
-				boolean[] tempBools = Collision.whichLineRectEdges(Player.x + Player.w / 2, Player.y + Player.h / 2, Player.xTempMouse, Player.yTempMouse, collidingTiles[i][0], collidingTiles[i][1], collidingTiles[i][2], collidingTiles[i][3]);
+				boolean[] tempBools = Collision.whichLineRectEdges(Player.x + Player.w / 2, Player.y + Player.h / 2, Player.xMouse, Player.yMouse, collidingTiles[i][0], collidingTiles[i][1], collidingTiles[i][2], collidingTiles[i][3]);
 			
 				works[i * 4 + 0] = tempBools[0];
 				works[i * 4 + 1] = tempBools[1];
@@ -178,7 +175,7 @@ public class MiscFunctions {
 						y2 = collidingTiles[i][1] + collidingTiles[i][3];
 					}
 					
-					possibilities[o] = Collision.whereLineLine(Player.x + Player.w / 2, Player.y + Player.h / 2, Player.xTempMouse, Player.yTempMouse, x1, y1, x2, y2);}
+					possibilities[o] = Collision.whereLineLine(Player.x + Player.w / 2, Player.y + Player.h / 2, Player.xMouse, Player.yMouse, x1, y1, x2, y2);}
 			}
 			
 			// find intersecting point closest to player
@@ -204,6 +201,7 @@ public class MiscFunctions {
 				Player.yMouseRay = possibilities[smallestIndex][1];
 			}
 		}
+		else {Player.canHook = false;}
 	}
 
 	public static void reset() {

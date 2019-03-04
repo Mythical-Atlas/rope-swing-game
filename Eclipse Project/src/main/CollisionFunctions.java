@@ -1,7 +1,6 @@
-package objects;
+package main;
 
-import main.Collision;
-import main.Physics;
+import objects.Player;
 
 public class CollisionFunctions {
 	public static boolean checkCollision(int[][] tiles) {

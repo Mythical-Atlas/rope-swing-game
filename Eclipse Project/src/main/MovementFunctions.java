@@ -1,6 +1,6 @@
-package objects;
+package main;
 
-import main.Physics;
+import objects.Player;
 
 public class MovementFunctions {
 	public static double linearFriction() {
@@ -10,9 +10,18 @@ public class MovementFunctions {
 		double dx = Player.dx;
 		
 		if(!Player.left && !Player.right || Player.left && Player.right) {
-			if(dx < -Player.X_ACCEL) {dx += Player.X_DECEL;}
-			else if(dx > Player.X_ACCEL) {dx -= Player.X_DECEL;}
-			else {dx = 0;}
+			if(dx < -Player.X_ACCEL) {
+				dx += Player.X_DECEL;
+				Player.stateIndex = Player.RUN;
+			}
+			else if(dx > Player.X_ACCEL) {
+				dx -= Player.X_DECEL;
+				Player.stateIndex = Player.RUN;
+			}
+			else {
+				dx = 0;
+				Player.stateIndex = Player.IDLE;
+			}
 		}
 		
 		return(dx);
@@ -22,13 +31,35 @@ public class MovementFunctions {
 		
 		double dx = Player.dx;
 		
+		if(Player.ground && dx != 0) {Player.stateIndex = Player.RUN;}
+		
 		if(Player.left && !Player.right && dx > -Player.X_MAX) {
+			if(Player.ground) {
+				if(Player.facingRight) {
+					if(dx == 0) {Player.stateIndex = Player.IDLE_TURN;}
+					else {Player.stateIndex = Player.RUN_TURN;}
+				}
+				
+				Player.facingRight = false;
+			}
+			
 			dx -= Player.X_ACCEL;
+			
 			if(!Player.ground) {dx -= Player.X_ACCEL;} // additional speed if in air
 			if(dx > 0 && Player.ground) {dx -= Player.X_DECEL;} // additional speed if going against current velocity
 		}
 		if(Player.right && !Player.left && dx < Player.X_MAX) {
+			if(Player.ground) {
+				if(!Player.facingRight) {
+					if(dx == 0) {Player.stateIndex = Player.IDLE_TURN;}
+					else {Player.stateIndex = Player.RUN_TURN;}
+				}
+				
+				Player.facingRight = true;
+			}
+			
 			dx += Player.X_ACCEL;
+			
 			if(!Player.ground) {dx += Player.X_ACCEL;} // additional speed if in air
 			if(dx < 0 && Player.ground) {dx += Player.X_DECEL;} // additional speed if going against current velocity
 		}
@@ -42,12 +73,12 @@ public class MovementFunctions {
 		double da = Player.da;
 		
 		if(Player.left && Player.da > -Player.A_MAX) {
-			/*if((y + h / 2 - yAnchor) < 0) {da += A_ACCEL;}
-			else {*/da -= Player.A_ACCEL;//}
+			da -= Player.A_ACCEL;
+			Player.facingRight = false;
 		}
 		if(Player.right && da < Player.A_MAX) {
-			/*if((y + h / 2 - yAnchor) < 0) {da -= A_ACCEL;}
-			else {*/da += Player.A_ACCEL;//}
+			da += Player.A_ACCEL;
+			Player.facingRight = true;
 		}
 		
 		return(da);

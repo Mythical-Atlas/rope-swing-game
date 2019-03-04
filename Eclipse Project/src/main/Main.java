@@ -22,10 +22,10 @@ public class Main extends JPanel implements MouseListener, KeyListener, Runnable
 	State[] states;
 	Thread thread;
 	
-	static final int FPS = 60;
-	static final int SCALE = 1;
-	static final int WIDTH = 1280;
-	static final int HEIGHT = 720;
+	public static final int FPS = 60;
+	public static final int SCALE = 1;
+	public static final int WIDTH = 1280;
+	public static final int HEIGHT = 720;
 
 	static JFrame frame;
 	

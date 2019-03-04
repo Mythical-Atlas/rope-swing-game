@@ -27,6 +27,8 @@ public class MapReader {
         
         int w = (int)(long)object.get("width");
 		int h = (int)(long)object.get("height");
+		int tw = (int)(long)object.get("tilewidth");
+		int th = (int)(long)object.get("tileheight");
 		
 		int[] tilemap = new int[w * h];
         int numTiles = 0;
@@ -44,14 +46,24 @@ public class MapReader {
 				int i = x + (y * w);
 				
 				if(tilemap[i] == 2) {
-					output[index] = new Tile(x * 32, y * 32, 32, 32);
+					output[index] = new Tile(x * tw, y * th, tw, th);
 					index++;
 				}
 			}
 		}
 		
-		System.out.println();
-		
 		return(output);
+	}
+	
+	public static int[] readTileMapInfo(InputStream path) throws FileNotFoundException, IOException, ParseException {
+		JSONObject object = (JSONObject)new JSONParser().parse(new InputStreamReader(path));
+        
+        int w = (int)(long)object.get("width");
+		int h = (int)(long)object.get("height");
+		
+		int tileW = (int)(long)object.get("tilewidth");
+		int tileH = (int)(long)object.get("tileheight");
+		
+		return(new int[]{w, h, tileW, tileH});
 	}
 }
